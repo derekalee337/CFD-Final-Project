@@ -23,7 +23,7 @@ global s;         % Source term
 global dt;        % Local time step at each node
 global artviscx;  % Artificial viscosity in x-direction
 global artviscy;  % Artificial viscosity in y-direction
-global ummsArray; % Array of umms values (funtion umms evaluated at all nodes)
+global ummsArray; % Array of umms values (function umms evaluated at all nodes)
 
 %************ Following are fixed parameters for array sizes *************
 imax = 65;   	% Number of points in the x-direction (use odd numbers only)
@@ -493,6 +493,19 @@ global u
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !************************************************************** */
 
+% Side walls: no-slip velocity and zero-normal-gradient pressure
+for j = 2:jmax-1
+    u(1,j,1) = two*u(2,j,1) - u(3,j,1); % Sets left wall pressure using linear interpolation
+    u(imax,j,1) = two*u(imax-1,j,1) - u(imax-2,j,1); % Sets right wall pressure using liner interpolation
+    u([1 imax],j,2:3) = zero; % Sets both velocities to zero on side walls
+end
+  
+for i = 2:imax-1
+    u(i,1,1) = two*u(i,2,1) - u(i,3,1); % Sets bottom wall pressure using linear interpolation
+    u(i,jmax,1) = two*u(i,jmax-1,1) - u(i,jmax-2,1); % Sets lid pressure using linear interpolation
+    u(i,[1 jmax],2:3) = zero; % Sets all velocities at top and bottom to zero
+    u(i,jmax,2) = uinf; % Sets x-velocity at lid to Uinf lid speed
+end
 
 
 end
