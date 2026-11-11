@@ -860,7 +860,20 @@ global u dt
 % !************************************************************** */
 
 
-
+dtvisc = fourth * rho * dx * dy / rmu; % Diffusive stability limit
+dtmin = 1e99; % Setting an arbitrarily high dt
+for j = 2:jmax-1
+    for i = 2:imax-1
+        uvel2 = u(i,j,2)^2 + u(i,j,3)^2; % local velocity squared for beta2 calculation
+        beta2 = max(uvel2, rkappa*vel2ref); % for lambda calculations
+        lambda_x = half * (abs(u(i,j,2))+sqrt(u(i,j,2)^2+four*beta2)); 
+        lambda_y = half * (abs(u(i,j,3))+sqrt(u(i,j,3)^2+four*beta2));
+        lambda_max = max(lambda_x, lambda_y);
+        dtconv = min(dx, dy)/lambda_max;
+        dt(i,j) = cfl * min(dtconv, dtvisc); % Array of all local time steps
+        dtmin = min(dt(i,j), dtmin); % The largest value for the global time step
+    end
+end
 
 end
 %************************************************************************
@@ -1077,7 +1090,6 @@ global u uold dt fp1
 % !************************************************************** */
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !************************************************************** */
-
 
 
 
