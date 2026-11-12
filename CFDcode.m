@@ -77,7 +77,7 @@ ymin = 0.0;      %                       maximum y location (m)
 ymax = 0.05;   	%                       maximum y location (m)
 Cx2 = 0.0;       % Coefficient for 2nd order damping (not required)
 Cy2 = 0.0;     	% Coefficient for 2nd order damping (not required)
-fsmall = 1.e-20; % small parameter
+fsmall = 1.e-9; % small parameter
 
 %-- Derived input quantities (set by function 'set_derived_inputs' called from main)----
 
@@ -1091,7 +1091,28 @@ global u uold dt fp1
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !************************************************************** */
 
+residualArray = zeros(imax,jmax,neq);
 
+for j = 2:jmax-1
+    for i = 2:imax-1
+        beta2 = max(u(i,j,2)^2 + u(i,j,3)^2, rkappa*vel2ref);
+        residualArray(i,j,1) = (uold(i,j,1) - u(i,j,1))/(beta2*dt(i,j));
+        residualArray(i,j,2) = rho*(uold(i,j,2) - u(i,j,2))/dt(i,j);
+        residualArray(i,j,3) = rho*(uold(i,j,3) - u(i,j,3))/dt(i,j);
+    end
+end
+
+% Calculates the L2norms of each of the residuals
+res(1) = sqrt(mean(residualArray(2:imax-1, 2:jmax-1, 1).^2, 'all'));
+res(2) = sqrt(mean(residualArray(2:imax-1, 2:jmax-1, 2).^2, 'all'));
+res(3) = sqrt(mean(residualArray(2:imax-1, 2:jmax-1, 3).^2, 'all'));
+
+% Sets the initial residual values
+if (n==ninit)
+    resinit(:) = res(:);
+end
+
+conv = max(res ./ resinit);
 
 
 % Write iterative residuals every 10 iterations
