@@ -888,7 +888,7 @@ function Compute_Artificial_Viscosity(~)
 % j                        % j index (y direction)
 
 % uvel2        % Local velocity squared
-% beta2        % Beta squared paramete for time derivative preconditioning
+% beta2        % Beta squared parameter for time derivative preconditioning
 % lambda_x     % Max absolute value e-value in (x,t)
 % lambda_y     % Max absolute value e-value in (y,t)
 % d4pdx4       % 4th derivative of pressure w.r.t. x
@@ -910,8 +910,37 @@ global artviscx artviscy
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !************************************************************** */
 
+% These loops only calculate the interior points 2 away from the boundary
+for j = 3:jmax-2
+    for i = 3:imax-2
+        beta2 = max(u(i,j,2)^2 + u(i,j,3)^2, rkappa*vel2ref);
 
+        lambda_x = half*(abs(u(i,j,2)) + sqrt(u(i,j,2)^2 + four*beta2));
+        lambda_y = half*(abs(u(i,j,3)) + sqrt(u(i,j,3)^2 + four*beta2));
 
+        d4pdx4 = (u(i+2,j,1) - four * u(i+1,j,1) + six * u(i,j,1) - four * u(i-1,j,1) + u(i-2,j,1))/(dx^4);
+        d4pdy4 = (u(i,j+2,1) - four * u(i,j+1,1) + six * u(i,j,1) - four * u(i,j-1,1) + u(i,j-2,1))/(dy^4);
+
+        artviscx(i,j) = -(lambda_x * Cx * dx^3)* d4pdx4/(beta2);
+        artviscy(i,j) = -(lambda_y * Cy * dy^3)*d4pdy4/(beta2);
+
+    end
+end
+
+% final the outer ring is calculated using linear extrapolation
+for j = 3:jmax-2
+    artviscx(2,j) = two * artviscx(3,j) - artviscx(4,j);
+    artviscy(2,j) = two * artviscy(3,j) - artviscy(4,j);
+    artviscx(imax - 1,j) = two * artviscx(imax - 2,j) - artviscx(imax - 3,j);
+    artviscy(imax - 1,j) = two * artviscy(imax - 2,j) - artviscy(imax - 3,j);
+end
+
+for i = 2:imax - 1
+    artviscx(i,2) = two * artviscx(i,3) - artviscx(i,4);
+    artviscy(i,2) = two * artviscy(i,3) - artviscy(i,4);
+    artviscx(i,jmax - 1) = two * artviscx(i,jmax - 2) - artviscx(i,jmax - 3);
+    artviscy(i,jmax - 1) = two * artviscy(i,jmax - 2) - artviscy(i,jmax - 3);
+end
 
 end
 %************************************************************************
@@ -1032,6 +1061,8 @@ global u uold artviscx artviscy dt s
 
 
 
+
+
 end
 %************************************************************************
 function pressure_rescaling(~)
@@ -1082,7 +1113,7 @@ function [res, resinit, conv] = check_iterative_convergence...
 % k                        % k index (# of equations)
 
 global zero
-global imax jmax neq fsmall
+global imax jmax neq fsmall rkappa vel2ref
 global u uold dt fp1
 
 % Compute iterative residuals to monitor iterative convergence
