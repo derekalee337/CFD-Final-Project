@@ -970,7 +970,7 @@ function SGS_forward_sweep(~)
 
 global two half
 global imax jmax rho rhoinv dx dy rkappa rmu vel2ref
-global artviscx artviscy dt s u
+global artviscx artviscy dt s u uold
 
 % Symmetric Gauss-Siedel: Forward Sweep
 
@@ -978,7 +978,29 @@ global artviscx artviscy dt s u
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !************************************************************** */
 
+for j = 2:jmax-1
+    for i = 2:imax-1
+        beta2 = max(u(i,j,2)^2 + u(i,j,3)^2, rkappa*vel2ref);
 
+        dpdx = (uold(i+1,j,1) - u(i-1,j,1))/(two*dx);
+        dudx = (uold(i+1,j,2) - u(i-1,j,2))/(two*dx);
+        dvdx = (uold(i+1,j,3) - u(i-1,j,3))/(two*dx);
+
+        dpdy = (uold(i,j+1,1) - u(i,j-1,1))/(two*dy);
+        dudy = (uold(i,j+1,2) - u(i,j-1,2))/(two*dy);
+        dvdy = (uold(i,j+1,3) - u(i,j-1,3))/(two*dy);
+
+        d2udx2 = (uold(i+1,j,2) - two*u(i,j,2) + u(i-1,j,2))/dx^2;
+        d2vdx2 = (uold(i+1,j,3) - two*u(i,j,3) + u(i-1,j,3))/dx^2;
+        d2udy2 = (uold(i,j+1,2) - two*u(i,j,2) + u(i,j-1,2))/dy^2;
+        d2vdy2 = (uold(i,j+1,3) - two*u(i,j,3) + u(i,j-1,3))/dy^2;
+
+        u(i,j,1) = u(i,j,1) + dt(i,j) * beta2 * (artviscx(i,j) + artviscy(i,j) + s(i,j,1) + rho * (dudx + dvdy));
+        u(i,j,2) = u(i,j,2) + dt(i,j) * (rhoinv * (rmu * (d2udx2 + d2udy2) + s(i,j,2) - dpdx) - u(i,j,2) * dudx - u(i,j,3) * dudy);
+        u(i,j,3) = u(i,j,3) + dt(i,j) * (rhoinv * (rmu * (d2vdx2 + d2vdy2) + s(i,j,3) - dpdy) - u(i,j,2) * dvdx - u(i,j,3) * dvdy);
+
+    end
+end
 
 
 
@@ -1010,7 +1032,7 @@ function SGS_backward_sweep(~)
 
 global two half
 global imax jmax rho rhoinv dx dy rkappa rmu vel2ref
-global artviscx artviscy dt s u
+global artviscx artviscy dt s u uold
 
 % Symmetric Gauss-Siedel: Backward Sweep
 
@@ -1018,7 +1040,29 @@ global artviscx artviscy dt s u
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !************************************************************** */
 
+for j = jmax-1:-1:2
+    for i = imax-1:-1:2
+        beta2 = max(u(i,j,2)^2 + u(i,j,3)^2, rkappa*vel2ref);
 
+        dpdx = (u(i+1,j,1) - uold(i-1,j,1))/(two*dx);
+        dudx = (u(i+1,j,2) - uold(i-1,j,2))/(two*dx);
+        dvdx = (u(i+1,j,3) - uold(i-1,j,3))/(two*dx);
+
+        dpdy = (u(i,j+1,1) - uold(i,j-1,1))/(two*dy);
+        dudy = (u(i,j+1,2) - uold(i,j-1,2))/(two*dy);
+        dvdy = (u(i,j+1,3) - uold(i,j-1,3))/(two*dy);
+
+        d2udx2 = (u(i+1,j,2) - two*u(i,j,2) + uold(i-1,j,2))/dx^2;
+        d2vdx2 = (u(i+1,j,3) - two*u(i,j,3) + uold(i-1,j,3))/dx^2;
+        d2udy2 = (u(i,j+1,2) - two*u(i,j,2) + uold(i,j-1,2))/dy^2;
+        d2vdy2 = (u(i,j+1,3) - two*u(i,j,3) + uold(i,j-1,3))/dy^2;
+
+        u(i,j,1) = u(i,j,1) + dt(i,j) * beta2 * (artviscx(i,j) + artviscy(i,j) + s(i,j,1) + rho * (dudx + dvdy));
+        u(i,j,2) = u(i,j,2) + dt(i,j) * (rhoinv * (rmu * (d2udx2 + d2udy2) + s(i,j,2) - dpdx) - u(i,j,2) * dudx - u(i,j,3) * dudy);
+        u(i,j,3) = u(i,j,3) + dt(i,j) * (rhoinv * (rmu * (d2vdx2 + d2vdy2) + s(i,j,3) - dpdy) - u(i,j,2) * dvdx - u(i,j,3) * dvdy);
+ 
+    end
+end
 
 
 end
@@ -1058,7 +1102,7 @@ global u uold artviscx artviscy dt s
 
 for j = 2:jmax-1
     for i = 2:imax-1
-        beta2 = max(uold(i,j,2)^2 + uold(i,j,3)^2, rkappa*vel2ref);
+        beta2 = max(u(i,j,2)^2 + u(i,j,3)^2, rkappa*vel2ref);
 
         dpdx = (uold(i+1,j,1) - uold(i-1,j,1))/(two*dx);
         dudx = (uold(i+1,j,2) - uold(i-1,j,2))/(two*dx);
@@ -1077,7 +1121,6 @@ for j = 2:jmax-1
         u(i,j,2) = uold(i,j,2) + dt(i,j) * (rhoinv * (rmu * (d2udx2 + d2udy2) + s(i,j,2) - dpdx) - uold(i,j,2) * dudx - uold(i,j,3) * dudy);
         u(i,j,3) = uold(i,j,3) + dt(i,j) * (rhoinv * (rmu * (d2vdx2 + d2vdy2) + s(i,j,3) - dpdy) - uold(i,j,2) * dvdx - uold(i,j,3) * dvdy);
  
-
     end
 end
 
