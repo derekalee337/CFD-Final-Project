@@ -1175,7 +1175,7 @@ function [res, resinit, conv] = check_iterative_convergence...
 
 global zero
 global imax jmax neq fsmall rkappa vel2ref
-global u uold dt fp1
+global u uold dt fp1 rho
 
 % Compute iterative residuals to monitor iterative convergence
 
@@ -1228,7 +1228,7 @@ function Discretization_Error_Norms(rL1norm, rL2norm, rLinfnorm)
 %Uses global variable(s): imax, jmax, neq, imms, xmax, xmin, ymax, ymin, rlength
 %Uses: u
 %To modify: rL1norm, rL2norm, rLinfnorm
-
+ 
 
 % i                        % i index (x direction)
 % j                        % j index (y direction)
@@ -1238,7 +1238,7 @@ function Discretization_Error_Norms(rL1norm, rL2norm, rLinfnorm)
 % y        % Temporary variable for y location
 % DE   	% Discretization error (absolute value)
 
-global zero imax jmax neq imms xmax xmin ymax ymin u
+global zero imax jmax neq imms xmax xmin ymax ymin u ummsArray
 
 if imms==1
 
@@ -1247,6 +1247,28 @@ if imms==1
 % !************************************************************** */
 
 
+DE = u - ummsArray;
+numberOfPoints = imax*jmax;
+
+for k = 1:neq
+    error_k = DE(:,:,k);
+    errorValues = error_k(:);
+
+    % Average absolute error.
+    rL1norm(k) = sum(abs(errorValues))/numberOfPoints;
+
+    % Root-mean-square error.
+    rL2norm(k) = sqrt(sum(errorValues.^2)/numberOfPoints);
+
+    % Maximum absolute error.
+    rLinfnorm(k) = max(abs(errorValues));
+end
+
+fprintf('Discretization-error norms:\n');
+fprintf('                 L1              L2              Linfinity\n');
+fprintf('Pressure      %e   %e   %e\n', rL1norm(1), rL2norm(1), rLinfnorm(1));
+fprintf('U velocity    %e   %e   %e\n', rL1norm(2), rL2norm(2), rLinfnorm(2));
+fprintf('V velocity    %e   %e   %e\n', rL1norm(3), rL2norm(3), rLinfnorm(3));
 
 
 end
