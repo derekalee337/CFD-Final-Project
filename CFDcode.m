@@ -54,9 +54,9 @@ six    = 6.0;
 
 %--------- User sets inputs here  --------
 
-nmax = 500000;        % Maximum number of iterations
-iterout = 5000;       % Number of time steps between solution output
-imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
+nmax = 5000;        % Maximum number of iterations
+iterout = 500;       % Number of time steps between solution output
+imms = 0;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
 isgs = 1;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
 irstr = 0;            % Restart flag: = 1 for restart (file 'restart.in', = 0 for initial run
 ipgorder = 0;         % Order of pressure gradient: 0 = 2nd, 1 = 3rd (not needed)
@@ -402,12 +402,12 @@ if (irstr==0)   % Starting run from scratch
             s(i,j,2) = zero;
             s(i,j,3) = zero;
         end
-        u(i,jmax,2) = uinf; % Initialize lid (top) to freestream velocity
     end
+    u(:,jmax,2) = uinf;
 else
     if (irstr==1)  % Restarting from previous run (file 'restart.in')
         fp4 = fopen('./restart.in','r'); % Note: 'restart.in' must exist!
-        if (fp4==NULL)
+        if (fp4==-1)
             fprintf('Error opening restart file. Stopping.\n');
             return;
         end
@@ -438,7 +438,7 @@ else
         fprintf('Restarting at iteration %d\n', ninit);
         fclose(fp4);
     else
-        printf('ERROR: irstr must equal 0 or 1!\n');
+        fprintf('ERROR: irstr must equal 0 or 1!\n');
         return;
     end
 end
@@ -469,7 +469,7 @@ else
     if (imms==1)
         bndrymms();
     else
-        printf('ERROR: imms must equal 0 or 1!\n');
+        fprintf('ERROR: imms must equal 0 or 1!\n');
         return;
     end
 end
@@ -980,7 +980,10 @@ global artviscx artviscy dt s u uold
 
 for j = 2:jmax-1
     for i = 2:imax-1
-        beta2 = max(u(i,j,2)^2 + u(i,j,3)^2, rkappa*vel2ref);
+        u_ij2 = u(i,j,2);
+        u_ij3 = u(i,j,3);
+        
+        beta2 = max(u_ij2^2 + u_ij3^2, rkappa*vel2ref);
 
         dpdx = (uold(i+1,j,1) - u(i-1,j,1))/(two*dx);
         dudx = (uold(i+1,j,2) - u(i-1,j,2))/(two*dx);
@@ -990,14 +993,14 @@ for j = 2:jmax-1
         dudy = (uold(i,j+1,2) - u(i,j-1,2))/(two*dy);
         dvdy = (uold(i,j+1,3) - u(i,j-1,3))/(two*dy);
 
-        d2udx2 = (uold(i+1,j,2) - two*u(i,j,2) + u(i-1,j,2))/dx^2;
-        d2vdx2 = (uold(i+1,j,3) - two*u(i,j,3) + u(i-1,j,3))/dx^2;
-        d2udy2 = (uold(i,j+1,2) - two*u(i,j,2) + u(i,j-1,2))/dy^2;
-        d2vdy2 = (uold(i,j+1,3) - two*u(i,j,3) + u(i,j-1,3))/dy^2;
+        d2udx2 = (uold(i+1,j,2) - two*u_ij2 + u(i-1,j,2))/dx^2;
+        d2vdx2 = (uold(i+1,j,3) - two*u_ij3 + u(i-1,j,3))/dx^2;
+        d2udy2 = (uold(i,j+1,2) - two*u_ij2 + u(i,j-1,2))/dy^2;
+        d2vdy2 = (uold(i,j+1,3) - two*u_ij3 + u(i,j-1,3))/dy^2;
 
         u(i,j,1) = u(i,j,1) + dt(i,j) * beta2 * (artviscx(i,j) + artviscy(i,j) + s(i,j,1) + rho * (dudx + dvdy));
-        u(i,j,2) = u(i,j,2) + dt(i,j) * (rhoinv * (rmu * (d2udx2 + d2udy2) + s(i,j,2) - dpdx) - u(i,j,2) * dudx - u(i,j,3) * dudy);
-        u(i,j,3) = u(i,j,3) + dt(i,j) * (rhoinv * (rmu * (d2vdx2 + d2vdy2) + s(i,j,3) - dpdy) - u(i,j,2) * dvdx - u(i,j,3) * dvdy);
+        u(i,j,2) = u_ij2 + dt(i,j) * (rhoinv * (rmu * (d2udx2 + d2udy2) + s(i,j,2) - dpdx) - u_ij2 * dudx - u_ij3 * dudy);
+        u(i,j,3) = u_ij3 + dt(i,j) * (rhoinv * (rmu * (d2vdx2 + d2vdy2) + s(i,j,3) - dpdy) - u_ij2 * dvdx - u_ij3 * dvdy);
 
     end
 end
@@ -1042,7 +1045,10 @@ global artviscx artviscy dt s u uold
 
 for j = jmax-1:-1:2
     for i = imax-1:-1:2
-        beta2 = max(u(i,j,2)^2 + u(i,j,3)^2, rkappa*vel2ref);
+        u_ij2 = u(i,j,2);
+        u_ij3 = u(i,j,3);
+        
+        beta2 = max(u_ij2^2 + u_ij3^2, rkappa*vel2ref);
 
         dpdx = (u(i+1,j,1) - uold(i-1,j,1))/(two*dx);
         dudx = (u(i+1,j,2) - uold(i-1,j,2))/(two*dx);
@@ -1052,14 +1058,14 @@ for j = jmax-1:-1:2
         dudy = (u(i,j+1,2) - uold(i,j-1,2))/(two*dy);
         dvdy = (u(i,j+1,3) - uold(i,j-1,3))/(two*dy);
 
-        d2udx2 = (u(i+1,j,2) - two*u(i,j,2) + uold(i-1,j,2))/dx^2;
-        d2vdx2 = (u(i+1,j,3) - two*u(i,j,3) + uold(i-1,j,3))/dx^2;
-        d2udy2 = (u(i,j+1,2) - two*u(i,j,2) + uold(i,j-1,2))/dy^2;
-        d2vdy2 = (u(i,j+1,3) - two*u(i,j,3) + uold(i,j-1,3))/dy^2;
+        d2udx2 = (u(i+1,j,2) - two*u_ij2 + uold(i-1,j,2))/dx^2;
+        d2vdx2 = (u(i+1,j,3) - two*u_ij3 + uold(i-1,j,3))/dx^2;
+        d2udy2 = (u(i,j+1,2) - two*u_ij2 + uold(i,j-1,2))/dy^2;
+        d2vdy2 = (u(i,j+1,3) - two*u_ij3 + uold(i,j-1,3))/dy^2;
 
         u(i,j,1) = u(i,j,1) + dt(i,j) * beta2 * (artviscx(i,j) + artviscy(i,j) + s(i,j,1) + rho * (dudx + dvdy));
-        u(i,j,2) = u(i,j,2) + dt(i,j) * (rhoinv * (rmu * (d2udx2 + d2udy2) + s(i,j,2) - dpdx) - u(i,j,2) * dudx - u(i,j,3) * dudy);
-        u(i,j,3) = u(i,j,3) + dt(i,j) * (rhoinv * (rmu * (d2vdx2 + d2vdy2) + s(i,j,3) - dpdy) - u(i,j,2) * dvdx - u(i,j,3) * dvdy);
+        u(i,j,2) = u_ij2 + dt(i,j) * (rhoinv * (rmu * (d2udx2 + d2udy2) + s(i,j,2) - dpdx) - u_ij2 * dudx - u_ij3 * dudy);
+        u(i,j,3) = u_ij3 + dt(i,j) * (rhoinv * (rmu * (d2vdx2 + d2vdy2) + s(i,j,3) - dpdy) - u_ij2 * dvdx - u_ij3 * dvdy);
  
     end
 end
@@ -1154,9 +1160,7 @@ else
     deltap = u(iref,jref,1) - pinf; % Reference pressure
 end
 
-j=1:jmax;
-i=1:imax;
-u(i,j,1) = u(i,j,1) - deltap;
+u(:,:,1) = u(:,:,1) - deltap;
 
 
 end
@@ -1208,7 +1212,7 @@ conv = max(res ./ resinit);
 
 
 % Write iterative residuals every 10 iterations
-if ( (mod(n,10)==0)||(n==ninit) )
+if ( (mod(n,1)==0)||(n==ninit) )
     fprintf(fp1, '%d %e %e %e %e\n',n, rtime, res(1), res(2), res(3) );
     fprintf('%d   %e   %e   %e   %e   %e\n',n, rtime, dtmin, res(1), res(2), res(3) );
     % Maybe a need to format this better
