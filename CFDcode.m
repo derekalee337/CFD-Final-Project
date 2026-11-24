@@ -62,7 +62,7 @@ irstr = 0;            % Restart flag: = 1 for restart (file 'restart.in', = 0 fo
 ipgorder = 0;         % Order of pressure gradient: 0 = 2nd, 1 = 3rd (not needed)
 lim = 1;              % variable to be used as the limiter sensor (= 1 for pressure)
 
-cfl  = 0.5;      % CFL number used to determine time step
+cfl  = 0.05;      % CFL number used to determine time step
 Cx = 0.01;     	% Parameter for 4th order artificial viscosity in x
 Cy = 0.01;      	% Parameter for 4th order artificial viscosity in y
 toler = 1.e-10; 	% Tolerance for iterative residual convergence
@@ -506,7 +506,6 @@ for i = 2:imax-1
     u(i,[1 jmax],2:3) = zero; % Sets all velocities at top and bottom to zero
     u(i,jmax,2) = uinf; % Sets x-velocity at lid to Uinf lid speed
 end
-
 
 end
 %************************************************************************
