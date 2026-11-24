@@ -56,7 +56,7 @@ six    = 6.0;
 
 nmax = 5000;        % Maximum number of iterations
 iterout = 500;       % Number of time steps between solution output
-imms = 0;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
+imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
 isgs = 1;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
 irstr = 0;            % Restart flag: = 1 for restart (file 'restart.in', = 0 for initial run
 ipgorder = 0;         % Order of pressure gradient: 0 = 2nd, 1 = 3rd (not needed)
@@ -1212,7 +1212,8 @@ conv = max(res ./ resinit);
 
 
 % Write iterative residuals every 10 iterations
-if ( (mod(n,1)==0)||(n==ninit) )
+if ( (mod(n,100 ...
+        )==0)||(n==ninit) )
     fprintf(fp1, '%d %e %e %e %e\n',n, rtime, res(1), res(2), res(3) );
     fprintf('%d   %e   %e   %e   %e   %e\n',n, rtime, dtmin, res(1), res(2), res(3) );
     % Maybe a need to format this better
@@ -1251,7 +1252,7 @@ if imms==1
 % !************************************************************** */
 
 
-DE = u - ummsArray;
+DE = u - ummsArray
 numberOfPoints = imax*jmax;
 
 for k = 1:neq
@@ -1268,11 +1269,11 @@ for k = 1:neq
     rLinfnorm(k) = max(abs(errorValues));
 end
 
-fprintf('Discretization-error norms:\n');
+fprintf('\nDiscretization-error norms:\n');
 fprintf('                 L1              L2              Linfinity\n');
-fprintf('Pressure      %e   %e   %e\n', rL1norm(1), rL2norm(1), rLinfnorm(1));
-fprintf('U velocity    %e   %e   %e\n', rL1norm(2), rL2norm(2), rLinfnorm(2));
-fprintf('V velocity    %e   %e   %e\n', rL1norm(3), rL2norm(3), rLinfnorm(3));
+fprintf('Pressure         %e              %e              %e\n', rL1norm(1), rL2norm(1), rLinfnorm(1));
+fprintf('U velocity       %e              %e              %e\n', rL1norm(2), rL2norm(2), rLinfnorm(2));
+fprintf('V velocity       %e              %e              %e\n', rL1norm(3), rL2norm(3), rLinfnorm(3));
 
 
 end
